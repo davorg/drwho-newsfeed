@@ -27,6 +27,7 @@ wq($start)
   ->each(sub {
       my $entry = XML::Feed::Entry->new('Atom');
       $entry->title($_->find('h1')->text);
+      $entry->author('BBC Doctor Who News');
       $entry->link($start . $_->find('a')->attr('href'));
       $entry->id($start . $_->find('a')->attr('href'));
       $entry->content('<p><img src="' .
