@@ -13,14 +13,36 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/puppeteer/puppeteer:latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.1
 
-      - name: Install dependencies
+      - name: Install system dependencies for Puppeteer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2 \
+            libpangocairo-1.0-0 \
+            libpangoft2-1.0-0 \
+            libgtk-3-0 \
+            libxshmfence1 \
+            ca-certificates \
+            fonts-liberation \
+            libappindicator3-1 \
+            lsb-release \
+            xdg-utils \
+            wget
+
+      - name: Install Node dependencies
         run: npm ci
 
       - name: Generate RSS feed
@@ -36,11 +58,15 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     permissions:
       pages: write
       id-token: write
 
     steps:
       - name: Deploy to GitHub Pages
+        id: deploy
         uses: actions/deploy-pages@v3
 
