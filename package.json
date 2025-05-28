@@ -1,0 +1,25 @@
+{
+  "dependencies": {
+    "feed": "^5.1.0",
+    "puppeteer": "^24.9.0"
+  },
+  "name": "drwho-newsfeed",
+  "version": "1.0.0",
+  "description": "Make a web feed from the BBC Doctor Who news site",
+  "main": "doctorwho_feed.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davorg/drwho-newsfeed.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/davorg/drwho-newsfeed/issues"
+  },
+  "homepage": "https://github.com/davorg/drwho-newsfeed#readme"
+}

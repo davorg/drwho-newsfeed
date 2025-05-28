@@ -1,0 +1,19 @@
+# Node dependencies
+node_modules/
+
+# Build output
+docs/doctorwho.xml
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / Editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# VSCode config (optional)
+.vscode/
+
