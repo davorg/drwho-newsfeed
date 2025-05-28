@@ -4,7 +4,11 @@ import fs from 'fs';
 
 const url = 'https://www.doctorwho.tv/news-and-features';
 
-const browser = await puppeteer.launch({ headless: true });
+const browser = await puppeteer.launch({
+  headless: 'new',
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
+
 const page = await browser.newPage();
 
 await page.goto(url, { waitUntil: 'networkidle2' });
