@@ -12,7 +12,7 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 
 await page.goto(url, { waitUntil: 'networkidle2' });
-await page.waitForSelector('article');
+await page.waitForSelector('a.read-and-watch');
 
 const articles = await page.evaluate(() => {
   const results = [];
