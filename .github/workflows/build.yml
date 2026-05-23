@@ -52,9 +52,9 @@ jobs:
 
       - name: Create the index page
         uses:  davorg/readme-to-index@v1
-         with:
-           readme: ABOUT.md
-           output: docs/index.html
+        with:
+          readme: ABOUT.md
+          output: docs/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
