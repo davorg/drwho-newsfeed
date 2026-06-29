@@ -12,43 +12,62 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 
 await page.goto(url, { waitUntil: 'networkidle2' });
-await page.waitForSelector('a.read-and-watch');
 
+// Dump page structure to help identify current selectors
+const pageInfo = await page.evaluate(() => {
+  const anchors = Array.from(document.querySelectorAll('a[href^="/"]'))
+    .filter(a => a.className)
+    .slice(0, 30)
+    .map(a => ({
+      className: a.className,
+      href: a.getAttribute('href'),
+      text: a.innerText.slice(0, 80).replace(/\s+/g, ' ').trim(),
+      childClasses: Array.from(a.querySelectorAll('[class]'))
+        .map(el => `${el.tagName.toLowerCase()}:${el.className}`)
+        .slice(0, 5)
+    }));
+  const bodyClasses = Array.from(document.querySelectorAll('[class]'))
+    .map(el => el.className)
+    .filter(c => c && c.length < 100)
+    .slice(0, 50);
+  return { anchors, bodyClasses };
+});
+console.log('=== PAGE STRUCTURE DEBUG ===');
+console.log(JSON.stringify(pageInfo, null, 2));
+console.log('=== END DEBUG ===');
+
+// Find article links: anchor tags that wrap a heading element, pointing to internal paths
 const articles = await page.evaluate(() => {
   const results = [];
 
-  document.querySelectorAll('a.read-and-watch').forEach(a => {
+  // Look for <a href="/..."> elements that contain a heading — these are article cards
+  const candidates = Array.from(document.querySelectorAll('a[href^="/"]'))
+    .filter(a => a.querySelector('h2, h3, h4'));
+
+  for (const a of candidates) {
     const href = a.getAttribute('href');
-    const titleEl = a.querySelector('h3');
-    const dateEl = a.querySelector('.read-and-watch__date');
-    const summaryEl = a.querySelector('p:nth-of-type(2)');
+    const titleEl = a.querySelector('h2, h3, h4');
+    const dateEl = a.querySelector('time, [class*="date"]');
+    const summaryEl = a.querySelector('p');
 
     const title = titleEl?.innerText?.trim();
     const summary = summaryEl?.innerText?.trim();
 
     let date = null;
     if (dateEl) {
-      const [day, month, year] = dateEl.innerText
-        .trim()
-        .split(/\s+/);
-        // Return ISO date string instead of a Date object
-        if (day && month && year) {
-          date = `${day} ${month} ${year}`; // Return as string
-        }
+      // Prefer the semantic datetime attribute on <time> elements
+      date = dateEl.getAttribute('datetime') || dateEl.innerText.trim() || null;
     }
 
     if (title && href) {
-      results.push({
-        title,
-        href,
-        date,
-        summary
-      });
+      results.push({ title, href, date, summary });
     }
-  });
+  }
 
   return results;
 });
+
+console.log(`Found ${articles.length} articles`);
 
 // Deduplicate by href (URL)
 const unique = new Map();
