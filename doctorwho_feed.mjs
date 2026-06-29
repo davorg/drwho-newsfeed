@@ -36,41 +36,17 @@ console.log('=== PAGE STRUCTURE DEBUG ===');
 console.log(JSON.stringify(pageInfo, null, 2));
 console.log('=== END DEBUG ===');
 
-// Try multiple selectors to find article links
-const ARTICLE_SELECTORS = [
-  'a.read-and-watch',
-  'a[class*="article"]',
-  'a[class*="card"]',
-  'a[class*="news"]',
-  'a[class*="feature"]',
-  'a[class*="promo"]',
-  'a[class*="story"]',
-  'a[class*="link"]',
-  'article a',
-];
-
-let usedSelector = null;
-for (const sel of ARTICLE_SELECTORS) {
-  const count = await page.evaluate(s => document.querySelectorAll(s).length, sel);
-  if (count > 0) {
-    usedSelector = sel;
-    console.log(`Using selector: ${sel} (found ${count} elements)`);
-    break;
-  }
-}
-
-if (!usedSelector) {
-  console.error('No article selector matched. See PAGE STRUCTURE DEBUG above for current selectors.');
-  await browser.close();
-  process.exit(1);
-}
-
-const articles = await page.evaluate((selector) => {
+// Find article links: anchor tags that wrap a heading element, pointing to internal paths
+const articles = await page.evaluate(() => {
   const results = [];
 
-  document.querySelectorAll(selector).forEach(a => {
+  // Look for <a href="/..."> elements that contain a heading — these are article cards
+  const candidates = Array.from(document.querySelectorAll('a[href^="/"]'))
+    .filter(a => a.querySelector('h2, h3, h4'));
+
+  for (const a of candidates) {
     const href = a.getAttribute('href');
-    const titleEl = a.querySelector('h2, h3, h4, [class*="title"]');
+    const titleEl = a.querySelector('h2, h3, h4');
     const dateEl = a.querySelector('time, [class*="date"]');
     const summaryEl = a.querySelector('p');
 
@@ -79,22 +55,19 @@ const articles = await page.evaluate((selector) => {
 
     let date = null;
     if (dateEl) {
-      // Prefer the datetime attribute on <time> elements
+      // Prefer the semantic datetime attribute on <time> elements
       date = dateEl.getAttribute('datetime') || dateEl.innerText.trim() || null;
     }
 
     if (title && href) {
-      results.push({
-        title,
-        href,
-        date,
-        summary
-      });
+      results.push({ title, href, date, summary });
     }
-  });
+  }
 
   return results;
-}, usedSelector);
+});
+
+console.log(`Found ${articles.length} articles`);
 
 // Deduplicate by href (URL)
 const unique = new Map();
