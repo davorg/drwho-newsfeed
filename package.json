@@ -8,7 +8,7 @@
   "description": "Make a web feed from the BBC Doctor Who news site",
   "main": "doctorwho_feed.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "repository": {
     "type": "git",
