@@ -90,8 +90,8 @@ export async function generateFeed({
     const page = await browser.newPage();
 
     await page.setViewport({ width: 1280, height: 900 });
-    await page.goto(pageUrl, { waitUntil: 'networkidle2' });
-    await page.waitForSelector('article, main a[href], a[href]', { timeout: 10000 }).catch(() => {});
+    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('a[href*="/news-and-features/"]', { timeout: 10000 }).catch(() => {});
 
     await page.evaluate(() => {
       window.scrollTo(0, document.body.scrollHeight);

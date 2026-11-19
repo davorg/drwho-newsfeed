@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import http from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 import puppeteer from 'puppeteer';
 
-import { extractArticlesFromPage, parseFeedDate } from './doctorwho_feed.mjs';
+import { extractArticlesFromPage, generateFeed, parseFeedDate } from './doctorwho_feed.mjs';
 
 test('extractArticlesFromPage finds stories from article containers', async (t) => {
   const browser = await puppeteer.launch({
@@ -62,4 +66,41 @@ test('parseFeedDate falls back when given an invalid date', () => {
 
   assert.ok(parsedDate instanceof Date);
   assert.ok(!Number.isNaN(parsedDate.getTime()));
+});
+
+test('generateFeed waits for stories, not unrelated persistent requests', { timeout: 20000 }, async (t) => {
+  let pendingRequests = 0;
+  const server = http.createServer((request, response) => {
+    if (request.url.startsWith('/pending')) {
+      pendingRequests++;
+      return;
+    }
+
+    response.writeHead(200, { 'content-type': 'text/html' });
+    response.end(`
+      <main><a href="/about">About</a></main>
+      <script>
+        fetch('/pending1'); fetch('/pending2'); fetch('/pending3');
+        setTimeout(() => {
+          document.querySelector('main').insertAdjacentHTML(
+            'beforeend', '<article><a href="/news-and-features/story">Story</a></article>'
+          );
+        }, 300);
+      </script>
+    `);
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => {
+    server.closeAllConnections();
+    server.close();
+  });
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'doctorwho-feed-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const outputPath = path.join(dir, 'feed.xml');
+  const pageUrl = `http://127.0.0.1:${server.address().port}/news-and-features`;
+
+  assert.equal(await generateFeed({ pageUrl, outputPath }), 1);
+  assert.equal(pendingRequests, 3);
+  assert.match(fs.readFileSync(outputPath, 'utf8'), /<title><!\[CDATA\[Story\]\]><\/title>/);
 });
